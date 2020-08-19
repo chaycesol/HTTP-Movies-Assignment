@@ -2,21 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom'
 import axios from 'axios';
 
+const initialValues = {
+    title: '',
+    director: '',
+    metascore: null,
+    stars: [],
+};
 
-const UpdateMovie = ({match, movieList, setMovieList}) => {
-    const initialValues = {
-        title: '',
-        director: '',
-        metascore: null,
-        stars: [],
-    };
-    
-    const [movieInput, setMovieInput] = useState(initialValues)
+const UpdateMovie = ({movieList, setMovieList}) => {
     const location = useLocation();
     const params = useParams();
     const { push } = useHistory();
 
-    const movie = movieList.find((thing) => `$(thing.id)` === match.params.id)
+    const [movieInput, setMovieInput] = useState(initialValues)
 
     useEffect(() => {
         if(location.state) {
@@ -31,6 +29,7 @@ const UpdateMovie = ({match, movieList, setMovieList}) => {
     }, []);
 
     const onChange = (e) => {
+        e.persist();
         setMovieInput({ ...movieInput, [e.target.name]: e.target.value })
     };
 
@@ -38,12 +37,21 @@ const UpdateMovie = ({match, movieList, setMovieList}) => {
         e.preventDefault();
     
         axios
-          .put(`http://localhost:5000/api/movies/${movie.id}`, movieInput)
+          .put(`http://localhost:5000/api/movies/${movieInput.id}`, movieInput)
           .then((res) => {
-            setMovieList([...movieList], res.data);
-            push(`/movies/${movie.id}`);
-          });
-      };
+            const newMovies = movieList.map((movie) => {
+                if (movie.id === res.data.id) {
+                  return res.data;
+                }
+                return movie;
+              });
+              setMovieList(newMovies);
+              push(`/movies/${movieInput.id}`);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        };
 
     return (
         <form onSubmit={onSubmit}>
